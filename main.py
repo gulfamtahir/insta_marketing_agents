@@ -1,4 +1,5 @@
 from agno.agent import Agent
+from agno.team.team import Team
 from agno.models.openai import OpenAIChat
 from agno.tools.googlesearch import GoogleSearchTools
 from agno.team import Team
@@ -9,14 +10,12 @@ from agno.utils.log import logger
 from textwrap import dedent
 from rich.pretty import pprint
 from dotenv import load_dotenv
+from agno.tools.thinking import ThinkingTools
 ############# GETTING PYDANTIC MODELS ################
 from research_model import InstaArticles
 from content_model import ContentCalendar
 from copy_writer_model import WeeklyCopywritingOutput
 load_dotenv()
-
-
-
 
 
 class InstagramContentWorkflow(Workflow):
@@ -43,6 +42,7 @@ class InstagramContentWorkflow(Workflow):
     content_strategist = Agent(
         name="Instagram Content Strategist",
         model=OpenAIChat("gpt-4o-mini"),
+        tools = [ThinkingTools()],
         description=dedent("""\As a master planner with a creative spirit, you have a talent for envisioning a cohesive content strategy that resonates with audiences. Your expertise in aligning content with brand voice and audience interests has consistently driven engagement and growth."""),
         instructions=dedent("""\Based on the market research findings, develop a comprehensive content calendar for a week. The calendar should specify the theme for each day of the week (from Monday to Sunday) where some content should be posted, and preliminary ideas for post content. For now, focus on a three-day content calendar, including the most relevant keywords and hashtags to use in each post."""),
         expected_output=dedent("""\A detailed week-long content calendar, formatted as markdown, that includes days of the week (from monday to friday), a brief overview of content ideas, and the most relevant keywords and hashtags to use in each post. Ensure the calendar aligns with the identified trends and audience preferences.""")
@@ -50,7 +50,7 @@ class InstagramContentWorkflow(Workflow):
     
     copywriter = Agent(
         name="Instagram Copywriter",
-        model=OpenAIChat("gpt-4"),
+        model=OpenAIChat("gpt-4o-mini"),
         description=dedent("""\ With a flair for storytelling and a persuasive pen, you create narratives that captivate and engage the audience. Your words are the bridge between the brand and its followers, embodying the brand's voice in every caption and call to action. Your writing is not only engaging, but also it incorporates all the SEO techniques, such as seamlessly using top keywords given to you and adding the best hashtags that are trending at the moment."""),
         instructions=dedent("""\    Write captivating and relevant copy for each Instagram post of the week, aligning to the strategic themes of the content calendar. The copy should engage the audience, embody the brand's voice, and encourage interaction. The copy should also be SEO-friendly and incorporate the relevant keywords and hashtags contained in the content schedule. 
 
@@ -69,7 +69,7 @@ class InstagramContentWorkflow(Workflow):
     
     visual_creator =Agent(
         name="Instagram Visual Creator",
-        model=OpenAIChat("gpt-4"),
+        model=OpenAIChat("gpt-4o-mini"),
         description=dedent("""\Merging creativity with technology, you use words to bring visions to life. You are great at crafting a detailed image description that can be used as a prompt for an AI-image generator. Your descriptions are more than just images; they tell stories, evoke emotions, and capture the essence of the brand, setting the visual tone for the Instagram feed."""),
         instructions=dedent("""\Based on the content strategy for each Instagram post, create the the visual art that will be published on Instagram on each day of the week. To do that, you will need to create a detailed description of the image that you will use for each day. 
         The descriptions that you will use need to be detailed, yet concise, and should include the main elements that should be present in the image. Describe the colors, the objects, the mood, and any other relevant information that you think is important for the image to be created.
@@ -81,11 +81,110 @@ class InstagramContentWorkflow(Workflow):
         expected_output="A markdown document with detailed descriptions of the images that will be used for each Instagram post of the week. Each description should be concise and include the main elements, colors, mood, and any other relevant information that will guide the creation of the image. The descriptions should align with the content calendar and the identified trends."
     )
 
-    def run(self, page_topic : str, weekly_topic: str , use_cache:bool)-> Iterator[RunResponse]:
+################ CREATING THE TEAM AGENT #######################
+    insta_marketing_team = Team(
+     name="Instagram Content Creation Team",
+    description=dedent("""
+        A specialized team of Instagram content experts working together to create engaging, 
+        trend-aware, and strategically optimized content for Instagram accounts. The team 
+        combines market research, content strategy, copywriting, and visual design to produce 
+        comprehensive content packages.
+    """),
+ instructions=dedent("""
+        Coordinate the creation of Instagram content through the following structured process:
+
+        1. Market Research Phase (Market Researcher):
+           - Analyze current Instagram trends for {page_topic}
+           - Research competitor content and strategies
+           - Identify trending hashtags and engagement patterns
+           - Find viral content formats and styles
+           - Focus on content relevant to: {weekly_topic}
+
+        2. Content Strategy Development (Content Strategist):
+           - Create whole week content plan based on research findings
+           - Define content themes and visual style guidelines
+           - Plan content mix (posts, stories, reels)
+           - Incorporate trending hashtags strategically
+           - Ensure content aligns with brand voice
+
+        3. Copywriting Creation (Copywriter):
+           - Develop engaging captions for each planned post
+           - Incorporate researched hashtags naturally
+           - Create compelling calls-to-action
+           - Maintain brand voice consistency
+           - Optimize for engagement
+
+        4. Visual Content Planning (Visual Creator):
+           - Design detailed image descriptions for each post
+           - Specify color schemes and visual elements
+           - Create cohesive visual storytelling
+           - Align visuals with brand aesthetics
+           - Include trending visual elements
+
+        Success Criteria:
+        - Complete content package for whole week days
+        - Strategic hashtag integration
+        - Engaging captions with calls-to-action
+        - Detailed visual guidelines
+        - Alignment with current trends
+    """),
+     model=OpenAIChat("gpt-4o-mini"), 
+     tools = [ThinkingTools()],
+     members=[market_researcher , content_strategist , copywriter , visual_creator],
+     show_tool_calls=True,
+     mode="collaborate",
+     success_criteria="The team has reached a consensus.",
+     enable_agentic_context=True,
+     show_members_responses=True,
+     )
+################ MAIN RUN METHOD ###############################
+    def run(self, page_topic : str, weekly_topic: str)-> Iterator[RunResponse]:
         logger.info(f"Generating Instagram Report on: {page_topic}")
-        logger.info(f"use cache: {use_cache}")
-        return self.market_researcher.run(f"Do market reserach of this site:Instagram {page_topic}for the {weekly_topic}", stream=True)
+        prompt = f"""
+    Task: Create comprehensive Instagram content strategy for {page_topic} focusing on {weekly_topic}
     
+    Process:
+    1. Market Research Phase:
+       - Analyze current Instagram trends related to {page_topic}
+       - Identify top-performing content in this niche
+       - Research popular hashtags and engagement patterns
+       - Study competitor strategies and successful posts
+    
+    2. Content Strategy Development:
+       - Create a 3-day content plan
+       - Include trending hashtags for each post
+       - Suggest optimal posting times
+       - Define content themes and visual style
+    
+    3. Content Creation:
+       - Develop engaging captions that align with brand voice
+       - Include relevant calls-to-action
+       - Incorporate researched hashtags strategically
+       - Suggest visual content descriptions
+    
+    4. Visual Guidelines:
+       - Provide detailed image descriptions for each post
+       - Specify color schemes and visual elements
+       - Include mood and atmosphere recommendations
+    
+    Please ensure all team members contribute their expertise to create a cohesive strategy that maximizes engagement and aligns with current Instagram trends.
+    """
+        # logger.info(f"use cache: {use_cache}")
+        team_response = self.insta_marketing_team.run(prompt)
+        if team_response is not None and team_response.content:
+            yield RunResponse(
+            run_id=self.run_id,
+            content=team_response.content,
+            event=RunEvent.workflow_completed
+        )
+        else:
+            yield RunResponse(
+            run_id=self.run_id,
+            content="Failed to generate Instagram report",
+            event=RunEvent.workflow_failed)
+
+        # yield from self.insta_marketing_team.run(f"Do market reserach of this site:Instagram {page_topic}for the {weekly_topic}", stream=True) 
+################ CACHING MECHANISM #############################
     def add_report_to_cache(self , page_topic : str,  weekly_topic: str)->None:
         logger.info(f"Caching the Instagram Topic report for the topic: {page_topic}")
         self.session_state.setdefault("insta_topic", [])
@@ -124,7 +223,33 @@ class InstagramContentWorkflow(Workflow):
         return None
     def write_report(self , topic: str , search_results : List)->Iterator[RunResponse]:
         pass
-# usage
-workflow = InstagramContentWorkflow()
-report_stream = workflow.run(page_topic="Castle", weekly_topic="Castle in Germany")
-pprint_run_response(report_stream, markdown=True)
+
+
+################ RUNNING THE CODE ##############################
+# workflow = InstagramContentWorkflow()
+# try :
+#     report: Iterator[RunResponse] = workflow.run(page_topic="Castle", weekly_topic="Castle in Germany")
+#     pprint_run_response(report, markdown=True, show_time=True)
+# except Exception as e:
+#     logger.warning(e)
+if __name__ == "__main__":
+    # Initialize workflow
+    workflow = InstagramContentWorkflow()
+    
+    try:
+        # Define the page and topic
+        page_topic = "Castle"  # Instagram page topic
+        weekly_topic = "Castle in Germany"  # Content focus for the week
+        
+        # Run the workflow
+        report: Iterator[RunResponse] = workflow.run(
+            page_topic=page_topic, 
+            weekly_topic=weekly_topic
+        )
+        
+        # Print the results
+        pprint_run_response(report, markdown=True, show_time=True)
+        
+    except Exception as e:
+        logger.warning(e)
+
