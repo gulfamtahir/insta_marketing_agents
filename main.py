@@ -15,13 +15,14 @@ from agno.tools.thinking import ThinkingTools
 from research_model import InstaArticles
 from content_model import ContentCalendar
 from copy_writer_model import WeeklyCopywritingOutput
+from agno.models.groq import Groq
 load_dotenv()
 
 
 class InstagramContentWorkflow(Workflow):
     market_researcher= Agent(
         name="Instagram Market Researcher",
-        model=OpenAIChat("gpt-4o-mini"),
+        model=OpenAIChat("gpt-4o"),
         tools=[GoogleSearchTools()],
         add_datetime_to_instructions=True,
         structured_outputs=True,
@@ -128,7 +129,7 @@ class InstagramContentWorkflow(Workflow):
         - Detailed visual guidelines
         - Alignment with current trends
     """),
-     model=OpenAIChat("gpt-4o-mini"), 
+     model=OpenAIChat("gpt-4o"), 
      tools = [ThinkingTools()],
      members=[market_researcher , content_strategist , copywriter , visual_creator],
      show_tool_calls=True,
@@ -139,38 +140,9 @@ class InstagramContentWorkflow(Workflow):
      )
 ################ MAIN RUN METHOD ###############################
     def run(self, page_topic : str, weekly_topic: str)-> Iterator[RunResponse]:
-        logger.info(f"Generating Instagram Report on: {page_topic}")
-        prompt = f"""
-    Task: Create comprehensive Instagram content strategy for {page_topic} focusing on {weekly_topic}
-    
-    Process:
-    1. Market Research Phase:
-       - Analyze current Instagram trends related to {page_topic}
-       - Identify top-performing content in this niche
-       - Research popular hashtags and engagement patterns
-       - Study competitor strategies and successful posts
-    
-    2. Content Strategy Development:
-       - Create a 3-day content plan
-       - Include trending hashtags for each post
-       - Suggest optimal posting times
-       - Define content themes and visual style
-    
-    3. Content Creation:
-       - Develop engaging captions that align with brand voice
-       - Include relevant calls-to-action
-       - Incorporate researched hashtags strategically
-       - Suggest visual content descriptions
-    
-    4. Visual Guidelines:
-       - Provide detailed image descriptions for each post
-       - Specify color schemes and visual elements
-       - Include mood and atmosphere recommendations
-    
-    Please ensure all team members contribute their expertise to create a cohesive strategy that maximizes engagement and aligns with current Instagram trends.
-    """
+        logger.info(f"Generating Instagram Report on Insta topic: {page_topic} for the week {weekly_topic}")
         # logger.info(f"use cache: {use_cache}")
-        team_response = self.insta_marketing_team.run(prompt)
+        team_response = self.insta_marketing_team.run(f"Generate the Weekly Instagram topic for: {page_topic} by focusing on the: {weekly_topic}")
         if team_response is not None and team_response.content:
             yield RunResponse(
             run_id=self.run_id,
@@ -226,12 +198,7 @@ class InstagramContentWorkflow(Workflow):
 
 
 ################ RUNNING THE CODE ##############################
-# workflow = InstagramContentWorkflow()
-# try :
-#     report: Iterator[RunResponse] = workflow.run(page_topic="Castle", weekly_topic="Castle in Germany")
-#     pprint_run_response(report, markdown=True, show_time=True)
-# except Exception as e:
-#     logger.warning(e)
+
 if __name__ == "__main__":
     # Initialize workflow
     workflow = InstagramContentWorkflow()
