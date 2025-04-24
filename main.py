@@ -1,6 +1,6 @@
 from agno.workflow import Workflow ,RunEvent, RunResponse
 from agno.agent import Agent
-from typing import Dict, Iterator , List
+from typing import Iterator
 from agno.utils.pprint import pprint_run_response
 from agno.utils.log import logger
 from dotenv import load_dotenv
@@ -11,11 +11,11 @@ from agno_agents.content_strategist import content_strategist
 from agno_agents.copywriter import copywriter
 from agno_agents.visual_creator import visual_creator
 from agno_agents.insta_team import insta_team_agent
-# from agno_agents.insta_team import insta_team
 load_dotenv()
 
 
 class InstagramContentWorkflow(Workflow):
+    ############### GETTING ALL THE RELEVANT AGENTS ##################
     market_researcher : Agent =  market_researcher
 
     insta_market_researcher = market_researcher
@@ -23,9 +23,8 @@ class InstagramContentWorkflow(Workflow):
     insta_copy_writer = copywriter
     insta_visual_writer =  visual_creator
     report_agent = insta_team_agent
-################ CREATING THE TEAM AGENT #######################
-    # insta_marketing_team = insta_team
-# ################ MAIN RUN METHOD ###############################
+
+# ################ WORKFLOW RUN METHOD ###############################
     def run(self, page_topic : str, weekly_topic: str)->Iterator[RunResponse]:
         logger.info(f"Generating Instagram Report on Insta topic: {page_topic} for the week {weekly_topic}")
         # logger.info(f"use cache: {use_cache}")
@@ -40,25 +39,26 @@ class InstagramContentWorkflow(Workflow):
                                         f"Instagram Visual Creator:{visual_reponse.content},")
         yield RunResponse(content=response.content , event=RunEvent.workflow_completed)
 
-    # Initialize workflow
+# Initialize workflow#############
 workflow = InstagramContentWorkflow(
     name="Instagram Weekly Content Report",
     workflow_id=f'generate_weekly_content_report'
 )
+################# AGNO PLAYGROUND ######################
     
-app =  Playground(
-    agents=[
-        market_researcher,
-        content_strategist,
-        copywriter,
-        visual_creator,
-        insta_team_agent
+# app =  Playground(
+#     agents=[
+#         market_researcher,
+#         content_strategist,
+#         copywriter,
+#         visual_creator,
+#         insta_team_agent
 
-    ],
-    workflows=[
-        workflow
-    ]
-).get_app()
+#     ],
+#     workflows=[
+#         workflow
+#     ]
+# ).get_app()
 
 ################ RUNNING THE CODE ##############################
 
