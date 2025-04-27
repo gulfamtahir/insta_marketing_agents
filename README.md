@@ -32,18 +32,11 @@ Insta Marketing Agent is a fully autonomous system that streamlines and automate
     pip install -r requirements.txt  
    ```
    
-3. Run the backend server (FastAPI):
-
-    ```bash
-   uvicorn app.main:app --reload  
-    ```
-
-4. Provide your Instagram Page description and weekly content topic — the agent will return a detailed marketing plan.
+3. Provide your Instagram Page description and weekly content topic — the agent will return a detailed marketing plan.
 
 ## Tech Stack
 - **Agno**: For designing and managing AI agent workflows
 - **Ollama**: Lightweight, fast execution of local LLMs for natural language understanding
-- **FastAPI** – High-performance API framework for a responsive backend
 
 
 
