@@ -31,8 +31,12 @@ Insta Marketing Agent is a fully autonomous system that streamlines and automate
    ```bash
     pip install -r requirements.txt  
    ```
+3. Run the app:
+  ```bash
+   python3 main.py
+   ```
    
-3. Provide your Instagram Page description and weekly content topic — the agent will return a detailed marketing plan.
+4. Provide your Instagram Page description and weekly content topic — the agent will return a detailed marketing plan.
 
 ## Tech Stack
 - **Agno**: For designing and managing AI agent workflows
