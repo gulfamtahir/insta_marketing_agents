@@ -1,4 +1,6 @@
-       # if team_response is not None and team_response.content:
+# FUTURE IMPLEMENTATION
+
+# if team_response is not None and team_response.content:
         #     yield RunResponse(
         #     run_id=self.run_id,
         #     content=team_response.content,
