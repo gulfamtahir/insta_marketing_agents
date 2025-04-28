@@ -42,7 +42,10 @@ Insta Marketing Agent is a fully autonomous system that streamlines and automate
 - **Agno**: For designing and managing AI agent workflows
 - **Ollama**: Lightweight, fast execution of local LLMs for natural language understanding
 
+## Upcoming Features
 
+- Going to add the FASTAPI as a backend
+- Automatically Posting to your instagram account with the help of Instagram MCP Server.
 
 ## Contributing
 Contributions are welcome! If you’d like to add features or improve the system:
